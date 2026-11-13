@@ -6,11 +6,12 @@
 <title>Archery · Lang Systems Arcade</title>
 <link rel="stylesheet" href="style.css">
 <main>
-<header><div><a href="https://arcade.langsystems.com.au/">LANG SYSTEMS ARCADE</a><h1>Archery</h1></div><div class="buttons"><button id="sound" aria-pressed="false">Sound off</button><button id="reset">Restart</button></div></header>
+<header><div><a href="https://arcade.langsystems.com.au/">LANG SYSTEMS ARCADE</a><h1>Archery</h1><p class="subtitle">Field round · Eight arrows</p></div><div class="buttons"><button id="sound" aria-pressed="false">Sound off</button><button id="reset">Restart</button></div></header>
 <section aria-label="Archery range">
 <canvas id="field" tabindex="0" aria-label="Archery range. Use left and right arrows to aim, up and down to adjust draw, and Space to release."></canvas>
 <div class="stats"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>ARROWS</small><strong id="arrows">8</strong></div><div><small>BEST</small><strong id="best">0</strong></div></div>
 <div class="result" id="result" role="status">Pick a target</div>
+<ol class="round" id="round" aria-label="Arrow scores"></ol>
 <div class="draw"><span>DRAW</span><meter id="draw" min="0" max="1" value="0"></meter></div>
 </section>
 <footer><span>Drag sideways to aim · Pull farther for distant targets · Release to shoot</span><span>Keyboard · ← → aim · ↑ ↓ draw · Space shoot</span></footer>

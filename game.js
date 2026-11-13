@@ -1,6 +1,6 @@
 const canvas = document.querySelector('#field');
 const ctx = canvas.getContext('2d');
-const ui = Object.fromEntries(['sound','reset','score','arrows','best','result','draw'].map(id => [id, document.getElementById(id)]));
+const ui = Object.fromEntries(['sound','reset','score','arrows','best','result','draw','round'].map(id => [id, document.getElementById(id)]));
 const clamp = (x, min, max) => Math.min(max, Math.max(min, x));
 const gravity = 9.8;
 const launchHeight = 1.6;
@@ -14,6 +14,13 @@ let width, height, focal, horizon, scenery;
 let aim = 0, draw = 0, remaining = 8, score = 0, best = 0, shot, drag, impact, audio;
 try { best = Number(localStorage.getItem('archery-best')) || 0; } catch {}
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
+const arrowScores = Array.from({length:8}, (_, index) => {
+  const item=document.createElement('li');
+  item.setAttribute('aria-label','Arrow '+(index+1)+' pending');
+  item.textContent='·';
+  ui.round.append(item);
+  return item;
+});
 let seed = 41;
 function random() {
   seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -51,6 +58,15 @@ function landscape() {
     }
     ctx.lineTo(width,height);ctx.fill();
   }
+  seed=77;
+  for(let i=0;i<75;i++) {
+    const x=random()*width, size=3+random()*12;
+    const base=horizon+8;
+    const tint=i%3 ? '#365c49' : '#47745b';
+    line([[x,base],[x+size*.16,base-size*1.8]],'#4c5440',size*.12);
+    ellipse(x,base-size*1.5,size*.45,size*.53,tint);
+    ellipse(x+size*.33,base-size*1.15,size*.4,size*.41,tint);
+  }
   const grass=ctx.createLinearGradient(0,horizon+7,0,height);
   grass.addColorStop(0,'#8d9d62');grass.addColorStop(1,'#436343');
   ctx.fillStyle=grass;ctx.fillRect(0,horizon+8,width,height);
@@ -66,6 +82,14 @@ function landscape() {
     const size=.5+depth*4;
     ctx.fillStyle=onPath ? '#5b492225' : random()>.5 ? '#dae09064' : '#203e3267';
     ctx.fillRect(x,y,size*(onPath?1.7:.44),size);
+  }
+  for(let i=0;i<90;i++) {
+    const x=random()*width, y=horizon+12+random()*(height-horizon-12);
+    const depth=(y-horizon)/(height-horizon);
+    if(Math.abs(x-width*.51)<width*(.07+depth*.2)) continue;
+    const stem=2+depth*9;
+    line([[x,y],[x+stem*.16,y-stem]],'#395441',1);
+    ellipse(x+stem*.16,y-stem,1+depth,1+depth,i%3 ? '#e0bf73' : '#e6dbc2');
   }
   for(const side of [-1,1]) {
     const posts=[];
@@ -165,8 +189,13 @@ function release() {
   sound('release');sync();
 }
 function finish(t,x,y,radius) {
+  const points=!t ? 0 : radius<.28 ? 50 : radius<.58 ? 30 : 15;
+  const index=arrowScores.length-remaining-1;
+  const entry=arrowScores[index];
+  entry.textContent=points || '×';
+  entry.dataset.score=points;
+  entry.setAttribute('aria-label','Arrow '+(index+1)+': '+(points ? points+' points' : 'miss'));
   if(t) {
-    const points=radius<.28 ? 50 : radius<.58 ? 30 : 15;
     score+=points;
     t.marks.push({x,y});impact={x,y,z:t.z,life:.55,points};
     ui.result.textContent=points===50 ? 'Bullseye · +50' : 'On target · +'+points;
@@ -197,6 +226,11 @@ function advance(dt) {
 function restart() {
   drag=shot=impact=null;aim=draw=score=0;remaining=8;
   targets.forEach(t=>t.marks.length=0);
+  arrowScores.forEach((item,index)=>{
+    item.textContent='·';
+    delete item.dataset.score;
+    item.setAttribute('aria-label','Arrow '+(index+1)+' pending');
+  });
   ui.result.textContent='Pick a target';sync();
 }
 canvas.addEventListener('pointerdown',e=>{

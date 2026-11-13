@@ -1,6 +1,6 @@
 # Archery
 
-A relaxed, eight-arrow field round for Lang Systems Arcade. Try four targets at 12–36 metres. Score 15 for the outer ring, 30 closer to centre and 50 for a bullseye. Your best round is saved in the current browser.
+A relaxed, eight-arrow field round for Lang Systems Arcade. Try four targets at 12–36 metres. Score 15 for the outer ring, 30 closer to centre and 50 for a bullseye. The scorecard records each arrow. Your best round is saved in the current browser.
 
 [Play on GitHub Pages](https://langzonedev.github.io/Archery-/)
 
