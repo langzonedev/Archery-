@@ -123,11 +123,7 @@ function target(t) {
   line([[x-r*.7,base],[x,y],[x+r*.7,base]],'#57412c',Math.max(2,r*.12));
   const palette=t.kind==='wood' ? ['#69472f','#af8152','#d2a36a','#6b4930','#f2d88c'] : ['#ede5cb','#303d43','#5085a0','#a74736','#efc257'];
   palette.forEach((colour,i)=>ellipse(x,y,r*(1-i*.18),r*(1-i*.18),colour));
-  for(const mark of t.marks) {
-    const [mx,my]=project(mark.x,mark.y,t.z);
-    line([[mx,my],[mx-6,my+4]],'#241d16',2);
-    ellipse(mx-6,my+4,2,1,'#fff0c0');
-  }
+  for(const mark of t.marks) drawArrow(mark,t.z);
   ctx.fillStyle='#fef5dc';ctx.font='600 11px system-ui';ctx.textAlign='center';
   ctx.fillText(t.label,x,base+14);
 }
@@ -191,9 +187,46 @@ function arrowSlope(power) { return .045+power*.055; }
 function arrowHeight(power,z) {
   return launchHeight+arrowSlope(power)*z-gravity*(z/arrowSpeed(power))**2/2;
 }
+function arrowPoint(arrow,z) {
+  const point=project(arrow.aim*z,arrowHeight(arrow.power,z),z);
+  // Blend the first stretch from the nock into the world projection.
+  const blend=clamp(1-z/5,0,1)**2;
+  return point.map((value,index)=>value+(arrow.origin[index]-value)*blend);
+}
+function drawArrow(arrow,z) {
+  const tip=arrowPoint(arrow,z);
+  const tail=arrowPoint(arrow,Math.max(.2,z-.8));
+  const dx=tip[0]-tail[0], dy=tip[1]-tail[1];
+  const projectedLength=Math.hypot(dx,dy);
+  const angle=projectedLength>.1 ? Math.atan2(dy,dx) : -Math.PI/2;
+  const length=clamp(projectedLength,clamp(150/z,5,13),56);
+  const detail=clamp(length*.18,1.3,5);
+  ctx.save();
+  ctx.translate(...tip);
+  ctx.rotate(angle);
+  line([[-length,0],[0,0]],'#30241d',detail*.76);
+  line([[-length,0],[-detail,0]],'#e5ba76',detail*.32);
+  ctx.fillStyle='#f6d688';
+  ctx.beginPath();
+  ctx.moveTo(-length,-detail);
+  ctx.lineTo(-length+detail*2,0);
+  ctx.lineTo(-length,detail);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle='#e2e9db';
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.lineTo(-detail*1.6,-detail*.5);
+  ctx.lineTo(-detail*1.6,detail*.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
 function release() {
   if(shot || !remaining || draw<.12) return;
-  shot={t:0, aim, power:draw, speed:arrowSpeed(draw)};
+  const size=Math.min(clamp(width*.24,78,155),height*.27);
+  const origin=[width*.53+aim*width*.61+size*.11,height*.74-size*.12];
+  shot={t:0, aim, power:draw, speed:arrowSpeed(draw), origin};
   remaining--; draw=0;
   ui.result.textContent='Arrow away';
   sound('release');sync();
@@ -207,7 +240,7 @@ function finish(t,x,y,radius) {
   entry.setAttribute('aria-label','Arrow '+(index+1)+': '+(points ? points+' points' : 'miss'));
   if(t) {
     score+=points;
-    t.marks.push({x,y});impact={x,y,z:t.z,life:.55,points};
+    t.marks.push(shot);impact={x,y,z:t.z,life:.55,points};
     ui.result.textContent=points===50 ? 'Bullseye · +50' : 'On target · +'+points;
     sound(points===50?'gold':'hit');
     if(score>best) {
@@ -296,11 +329,7 @@ function frame(now) {
     advance(dt);
     ctx.drawImage(scenery,0,0,width,height);
     [...targets].reverse().forEach(target);
-    if(shot && shot.t>.035) {
-      const z=shot.t*shot.speed;
-      const [x,y]=project(shot.aim*z,arrowHeight(shot.power,z),z);
-      line([[x,y],[x-8,y+5]],'#fff2be',2);
-    }
+    if(shot && shot.t>0) drawArrow(shot,shot.t*shot.speed);
     if(impact) {
       if(!motion.matches) {
         const [x,y]=project(impact.x,impact.y,impact.z);
