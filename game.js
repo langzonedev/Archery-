@@ -206,19 +206,20 @@ canvas.addEventListener('pointerup',e=>{
   drag=null;release();draw=0;sync();
 });
 function cancel() { drag=null;draw=0;sync(); }
-canvas.addEventListener('pointercancel',cancel);
-canvas.addEventListener('lostpointercapture',cancel);
+function cancelPointer(e) { if(drag?.id===e.pointerId) cancel(); }
+canvas.addEventListener('pointercancel',cancelPointer);
+canvas.addEventListener('lostpointercapture',cancelPointer);
 canvas.addEventListener('blur',cancel);
 window.addEventListener('blur',cancel);
 canvas.addEventListener('keydown',e=>{
   if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','Escape'].includes(e.code)) return;
   e.preventDefault();
+  if(e.code==='Escape') { cancel();return; }
   if(shot || !remaining || drag) return;
   if(e.code==='ArrowLeft') aim=clamp(aim-.018,-.52,.52);
   if(e.code==='ArrowRight') aim=clamp(aim+.018,-.52,.52);
   if(e.code==='ArrowUp') draw=clamp(draw+.08,0,1);
   if(e.code==='ArrowDown') draw=clamp(draw-.08,0,1);
-  if(e.code==='Escape') cancel();
   if(e.code==='Space'&&!e.repeat) release();
   sync();
 });
