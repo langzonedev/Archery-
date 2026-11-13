@@ -132,23 +132,33 @@ function target(t) {
   ctx.fillText(t.label,x,base+14);
 }
 function bow() {
-  const x=width/2 + aim*width*.53;
-  const y=height*.75;
-  const s=Math.min(clamp(width*.21,75,130),height*.24);
-  const bend=draw*s*.14;
-  const top=[x+s*.21-bend,y-s*.65];
-  const bottom=[x-s*.07-bend,y+s*.93];
-  const nock=[x-s*.45-draw*s*.46,y+s*.35];
+  const s=Math.min(clamp(width*.24,78,155),height*.27);
+  const x=width*.53+aim*width*.61;
+  const y=height*.74;
+  const bend=draw*s*.15;
+  const grip=[x+s*.15,y];
+  const top=[x+s*.08-bend,y-s*.94];
+  const bottom=[x+s*.02-bend,y+s*.82];
+  const nock=[x-s*(.14+draw*.26),y+s*(.49+draw*.16)];
+  const front=[x+s*.11,y-s*.12];
   ctx.lineCap='round';ctx.lineJoin='round';
-  line([top,nock,bottom],'#eee3ba',1.5);
+  line([[width*.65,height+s*.14],grip],'#263b35',s*.28);
+  line([[width*.65,height+s*.14],grip],'#466153',s*.19);
+  line([top,nock,bottom],'#eee3ba',1.4);
   ctx.beginPath();ctx.moveTo(...top);
-  ctx.bezierCurveTo(x+s*.62,y-s*.15,x+s*.46,y+s*.61,...bottom);
-  ctx.strokeStyle='#392a1e';ctx.lineWidth=s*.085;ctx.stroke();
-  ctx.strokeStyle='#ad7348';ctx.lineWidth=s*.05;ctx.stroke();
-  line([[x+s*.43,y+s*.2],[x+s*.38,y+s*.42]],'#354638',s*.13);
+  ctx.bezierCurveTo(x+s*.48,y-s*.67,x+s*.03,y-s*.25,...grip);
+  ctx.bezierCurveTo(x+s*.04,y+s*.28,x+s*.37,y+s*.56,...bottom);
+  ctx.strokeStyle='#392a1e';ctx.lineWidth=s*.08;ctx.stroke();
+  ctx.strokeStyle='#be8655';ctx.lineWidth=s*.047;ctx.stroke();
+  ellipse(grip[0],grip[1],s*.095,s*.13,'#b88966');
+  line([[grip[0]-s*.065,y-s*.035],[grip[0]+s*.06,y-s*.035]],'#d2a482',s*.035);
   if(remaining && !shot) {
-    line([nock,[x+s*.52,y-s*.26]],'#453428',2.5);
-    line([nock,[nock[0]+10,nock[1]-5]],'#ead48e',5);
+    line([nock,front],'#31271f',2.5);
+    line([nock,[nock[0]+(front[0]-nock[0])*.17,nock[1]+(front[1]-nock[1])*.17]],'#f2d79b',4);
+    if(draw>0) {
+      line([[width*.32,height+s*.13],nock],'#334b41',s*.2);
+      ellipse(nock[0],nock[1],s*.075,s*.064,'#bd906e');
+    }
   }
   ctx.lineCap='butt';
   const guide=targets.reduce((nearest,target) =>
