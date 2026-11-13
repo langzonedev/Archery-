@@ -166,11 +166,37 @@ function bow() {
   ctx.strokeStyle='#233126';ctx.lineWidth=3;ctx.stroke();
   ctx.strokeStyle='#fff4ce';ctx.lineWidth=1.5;ctx.stroke();
 }
+function texture(context, output, layers) {
+  const now = context.currentTime;
+  for (const [delay, duration, frequency, resonance, level] of layers) {
+    const source = context.createBufferSource();
+    const frames = Math.ceil(context.sampleRate * duration);
+    source.buffer = context.createBuffer(1, frames, context.sampleRate);
+    const data = source.buffer.getChannelData(0);
+    for (let i = 0; i < frames; i++) {
+      const attack = Math.min(1, i / (context.sampleRate * .0015));
+      data[i] = (Math.random() * 2 - 1) * attack * (1 - i / frames) ** 2;
+    }
+    const filter = context.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = frequency;
+    filter.Q.value = resonance;
+    const gain = context.createGain();
+    gain.gain.value = level;
+    source.connect(filter).connect(gain).connect(output);
+    source.start(now + delay);
+  }
+}
+
 function sound(kind) {
   if(ui.sound.getAttribute('aria-pressed')!=='true') return;
   try {
     audio ??= new AudioContext();
     void audio.resume().catch(()=>{});
+    texture(audio, audio.destination, kind === 'release' ? [
+      [0, .035, 2000, 2.4, .36], [.006, .13, 610, 2.8, .36], [.024, .11, 1220, .8, .12],
+    ] : [[0, .035, 1220, .55, .36], [.002, .18, 235, 1.5, .62]]);
+    if (kind !== 'gold') return;
     const oscillator=audio.createOscillator(), gain=audio.createGain(), now=audio.currentTime;
     oscillator.type=kind==='release' ? 'triangle' : 'sine';
     oscillator.frequency.setValueAtTime(kind==='gold'?690:kind==='hit'?380:130,now);
