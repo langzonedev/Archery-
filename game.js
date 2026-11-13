@@ -80,6 +80,7 @@ function landscape() {
 }
 function resize() {
   const rect=canvas.getBoundingClientRect();
+  if(drag && (width!==rect.width || height!==rect.height)) cancel();
   width=rect.width;height=rect.height;
   const scale=Math.min(devicePixelRatio,2);
   canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
@@ -109,7 +110,7 @@ function target(t) {
 function bow() {
   const x=width/2 + aim*width*.53;
   const y=height*.75;
-  const s=clamp(width*.21,75,130);
+  const s=Math.min(clamp(width*.21,75,130),height*.24);
   const bend=draw*s*.14;
   const top=[x+s*.21-bend,y-s*.65];
   const bottom=[x-s*.07-bend,y+s*.93];
@@ -126,9 +127,14 @@ function bow() {
     line([nock,[nock[0]+10,nock[1]-5]],'#ead48e',5);
   }
   ctx.lineCap='butt';
-  const [guideX,guideY]=project(aim*20,launchHeight+20*(.045+draw*.055),20);
-  line([[guideX-6,guideY],[guideX+6,guideY]],'#fff4ce',1.5);
-  line([[guideX,guideY-6],[guideX,guideY+6]],'#fff4ce',1.5);
+  const guide=targets.reduce((nearest,target) =>
+    Math.abs(target.x/target.z-aim)<Math.abs(nearest.x/nearest.z-aim) ? target : nearest);
+  const guideHeight=draw>=.12 ? arrowHeight(draw,guide.z) : guide.y;
+  const [guideX,guideY]=project(aim*guide.z,guideHeight,guide.z);
+  if(guideY>horizon+height*.36 || guideY<height*.18) return;
+  ctx.beginPath();ctx.arc(guideX,guideY,5,0,Math.PI*2);
+  ctx.strokeStyle='#233126';ctx.lineWidth=3;ctx.stroke();
+  ctx.strokeStyle='#fff4ce';ctx.lineWidth=1.5;ctx.stroke();
 }
 function sound(kind) {
   if(ui.sound.getAttribute('aria-pressed')!=='true') return;
@@ -146,10 +152,14 @@ function sound(kind) {
 function sync() {
   ui.score.textContent=score;ui.arrows.textContent=remaining;ui.best.textContent=best;ui.draw.value=draw;
 }
+function arrowSpeed(power) { return 10+power*34; }
+function arrowSlope(power) { return .045+power*.055; }
+function arrowHeight(power,z) {
+  return launchHeight+arrowSlope(power)*z-gravity*(z/arrowSpeed(power))**2/2;
+}
 function release() {
   if(shot || !remaining || draw<.12) return;
-  const speed=10+draw*34;
-  shot={t:0, aim, speed, rise:speed*(.045+draw*.055)};
+  shot={t:0, aim, power:draw, speed:arrowSpeed(draw)};
   remaining--; draw=0;
   ui.result.textContent='Arrow away';
   sound('release');sync();
@@ -178,12 +188,11 @@ function advance(dt) {
   const z=shot.t*shot.speed;
   for(const t of targets) {
     if(prev>=t.z || z<t.z) continue;
-    const time=t.z/shot.speed;
-    const x=shot.aim*t.z, y=launchHeight+shot.rise*time-gravity*time*time/2;
+    const x=shot.aim*t.z, y=arrowHeight(shot.power,t.z);
     const radius=Math.hypot(x-t.x,y-t.y)/t.radius;
     if(radius<=1) { finish(t,x,y,radius);return; }
   }
-  if(launchHeight+shot.rise*shot.t-gravity*shot.t**2/2<0 || z>80) finish();
+  if(arrowHeight(shot.power,z)<0 || z>80) finish();
 }
 function restart() {
   drag=shot=impact=null;aim=draw=score=0;remaining=8;
@@ -205,7 +214,12 @@ canvas.addEventListener('pointerup',e=>{
   if(drag?.id!==e.pointerId) return;
   drag=null;release();draw=0;sync();
 });
-function cancel() { drag=null;draw=0;sync(); }
+function cancel() {
+  const pointerId=drag?.id;
+  drag=null;
+  if(pointerId!==undefined && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+  draw=0;sync();
+}
 function cancelPointer(e) { if(drag?.id===e.pointerId) cancel(); }
 canvas.addEventListener('pointercancel',cancelPointer);
 canvas.addEventListener('lostpointercapture',cancelPointer);
@@ -240,7 +254,7 @@ function frame(now) {
     [...targets].reverse().forEach(target);
     if(shot && shot.t>.035) {
       const z=shot.t*shot.speed;
-      const [x,y]=project(shot.aim*z,launchHeight+shot.rise*shot.t-gravity*shot.t**2/2,z);
+      const [x,y]=project(shot.aim*z,arrowHeight(shot.power,z),z);
       line([[x,y],[x-8,y+5]],'#fff2be',2);
     }
     if(impact) {

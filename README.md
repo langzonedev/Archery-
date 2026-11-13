@@ -6,7 +6,7 @@ A relaxed, eight-arrow field round for Lang Systems Arcade. Try four targets at 
 
 ## Controls
 
-- Touch or mouse: press inside the range, drag sideways to aim and down to draw. Release to shoot.
+- Touch or mouse: press inside the range, drag sideways to aim and down to draw. Release to shoot. The aim dot previews where the arrow crosses the nearest target lane.
 - Keyboard: Tab to the range. Left and Right aim, Up and Down adjust draw, Space shoots and Escape clears the draw.
 - Restart begins a fresh round. Sound is optional.
 
