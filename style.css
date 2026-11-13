@@ -20,3 +20,10 @@ strong{font-size:1.15rem;font-variant-numeric:tabular-nums}
 meter{width:clamp(55px,12vw,120px);height:10px;accent-color:#edc671}
 footer{color:#c2d2bc;font-size:.78rem;padding-top:12px;flex-wrap:wrap}
 @media(max-width:520px){.stats{gap:10px;padding:7px 9px}.buttons{gap:5px}canvas{height:65svh}}
+@media (orientation: landscape) and (max-height: 530px) {
+  main{padding:8px 12px}
+  header{margin-bottom:8px}
+  h1{font-size:clamp(27px,5vw,36px)}
+  canvas{height:max(180px,calc(100svh - 108px));min-height:0}
+  footer{padding-top:6px}
+}
